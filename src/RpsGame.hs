@@ -1,4 +1,4 @@
-module RpsGame where
+module RpsGame (RPS(..), RoundOutcome(..), runGame, printGameResult) where
 import Control.Monad.State
 
 data RPS = Rock | Paper | Scissors
@@ -68,3 +68,11 @@ evalGameState state = evalState state (Paper, Paper)
 
 execGameState :: State GameState a -> GameState
 execGameState state = execState state (Paper, Paper)
+
+runGame :: RPS -> RPS -> (RoundOutcome, (RPS, RPS))
+runGame i1 i2 = runGameState $ evalSGameLogic $ getRoundRes (rps i1) (rps i2)
+
+printGameResult :: (RoundOutcome, (RPS, RPS)) -> String
+printGameResult (ro, (i1, i2)) = "Game result: " ++ show ro ++ "\n" ++
+  "Your weapon: " ++ show i1 ++ "\n" ++
+  "Bot's weapon: " ++ show i2 ++ "\n"
