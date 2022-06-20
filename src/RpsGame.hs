@@ -4,7 +4,9 @@ import Control.Monad.State
 data RPS = Rock | Paper | Scissors
   deriving (Eq, Enum, Bounded, Show)
 
-type GameState = (RPS, RPS)
+type ItemsState = (RPS, RPS)
+
+type GameState = (ItemsState, RoundOutcome)
 
 instance Ord RPS where
   compare Rock Rock = EQ
@@ -20,10 +22,12 @@ instance Ord RPS where
 data RoundOutcome = Win | Lose | Draw
   deriving (Eq, Show)
 
+--
+
 class GameLogic repr where
   rps :: RPS -> repr RPS
   roundOutcome :: RoundOutcome -> repr RoundOutcome
-  getRoundRes :: repr RPS -> repr RPS -> repr RoundOutcome
+  getRoundRes :: repr RPS -> repr RPS -> repr GameState
 
 comapreRPS :: (GameLogic a) => RPS -> RPS -> a RoundOutcome
 comapreRPS i1 i2 = 
@@ -39,35 +43,12 @@ instance GameLogic G where
   roundOutcome = G
   getRoundRes i1 i2 =
     let comp = compare (unG i1) (unG i2)
-    in case comp of GT -> G Win
-                    EQ -> G Draw
-                    LT -> G Lose
+    in case comp of GT -> G ((unG i1, unG i2), Win)
+                    EQ -> G ((unG i1, unG i2), Draw)
+                    LT -> G ((unG i1, unG i2), Lose)
 
 evalGame :: G a -> a
 evalGame = unG
 
-newtype SI a = SI { unSI :: State GameState a }
-
-instance GameLogic SI where
-  rps = SI . return
-  roundOutcome = SI . return
-  getRoundRes si1 si2 = SI $ do
-    i1 <- unSI si1 
-    i2 <- unSI si2
-    put (i1, i2)
-    unSI $ comapreRPS i1 i2
-
-evalSGameLogic :: SI a -> State GameState a
-evalSGameLogic = unSI
-
-runGameState :: State GameState a -> (a, GameState)
-runGameState state = runState state (Paper, Paper)
-
-evalGameState :: State GameState a -> a 
-evalGameState state = evalState state (Paper, Paper)
-
-execGameState :: State GameState a -> GameState
-execGameState state = execState state (Paper, Paper)
-
-runGame :: RPS -> RPS -> (RoundOutcome, GameState)
-runGame i1 i2 = runGameState $ evalSGameLogic $ getRoundRes (rps i1) (rps i2)
+runGame :: RPS -> RPS -> GameState
+runGame i1 i2 = evalGame $ getRoundRes (rps i1) (rps i2)

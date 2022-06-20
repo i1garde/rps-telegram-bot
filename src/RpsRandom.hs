@@ -1,4 +1,4 @@
-module RpsRandom where
+module RpsRandom (randomItem) where
 
 import RpsGame (RPS (..), RoundOutcome (..))
 import System.Random
@@ -24,5 +24,5 @@ instance RandomRps R where
 evalRand :: R a -> IO a
 evalRand = unR
 
-randomRPS :: IO RPS
-randomRPS = evalRand getRandItem
+randomItem :: IO RPS
+randomItem = evalRand getRandItem
