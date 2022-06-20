@@ -4,6 +4,8 @@ import Control.Monad.State
 data RPS = Rock | Paper | Scissors
   deriving (Eq, Enum, Bounded, Show)
 
+type GameState = (RPS, RPS)
+
 instance Ord RPS where
   compare Rock Rock = EQ
   compare Paper Paper = EQ
@@ -23,6 +25,13 @@ class GameLogic repr where
   roundOutcome :: RoundOutcome -> repr RoundOutcome
   getRoundRes :: repr RPS -> repr RPS -> repr RoundOutcome
 
+comapreRPS :: (GameLogic a) => RPS -> RPS -> a RoundOutcome
+comapreRPS i1 i2 = 
+  case comp of GT -> roundOutcome Win
+               EQ -> roundOutcome Draw
+               LT -> roundOutcome Lose
+  where comp = compare i1 i2
+
 newtype G a = G { unG :: a }
 
 instance GameLogic G where
@@ -37,35 +46,25 @@ instance GameLogic G where
 evalGame :: G a -> a
 evalGame = unG
 
-class StatefulRps repr where
-  trackState :: RPS -> RPS -> repr RoundOutcome
+newtype SI a = SI { unSI :: State GameState a }
 
-type GameState = (RPS, RPS)
-
-newtype GS a = GS { unGS :: State GameState a }
-
-instance StatefulRps GS where
-  trackState i1 i2 = GS $ do
+instance GameLogic SI where
+  rps = SI . return
+  roundOutcome = SI . return
+  getRoundRes si1 si2 = SI $ do
+    i1 <- unSI si1 
+    i2 <- unSI si2
     put (i1, i2)
-    case comp of GT -> return Win
-                 EQ -> return Draw
-                 LT -> return Lose
-    where comp = compare i1 i2
+    unSI $ comapreRPS i1 i2
 
-getFinalGameState :: GS a -> State GameState a
-getFinalGameState = unGS
+evalSGameLogic :: SI a -> State GameState a
+evalSGameLogic = unSI
 
-getState :: State GameState RoundOutcome -> (RPS, RPS)
-getState gState = execState gState (Paper, Paper)
+runGameState :: State GameState a -> (a, GameState)
+runGameState state = runState state (Paper, Paper)
 
-getStatefulOutcome :: State GameState RoundOutcome -> RoundOutcome
-getStatefulOutcome gState = evalState gState (Paper, Paper)
+evalGameState :: State GameState a -> a 
+evalGameState state = evalState state (Paper, Paper)
 
-execGameState :: GS RoundOutcome -> (RPS, RPS)
-execGameState = getState . unGS
-
-evalGameState :: GS RoundOutcome -> RoundOutcome
-evalGameState = getStatefulOutcome . unGS
-
---pretty-print
---instance
+execGameState :: State GameState a -> GameState
+execGameState state = execState state (Paper, Paper)
