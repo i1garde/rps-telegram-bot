@@ -16,3 +16,8 @@ main = do
     "3" -> 
       putStrLn . printGameResult $ runGame Scissors item
     _ -> error "Wrong weapon."
+
+printGameResult :: (RoundOutcome, GameState) -> String
+printGameResult (ro, (i1, i2)) = "Game result: " ++ show ro ++ "\n" ++
+  "Your weapon: " ++ show i1 ++ "\n" ++
+  "Bot's weapon: " ++ show i2 ++ "\n"
