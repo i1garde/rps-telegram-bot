@@ -22,8 +22,6 @@ instance Ord RPS where
 data RoundOutcome = Win | Lose | Draw
   deriving (Eq, Show)
 
---
-
 class GameLogic repr where
   rps :: RPS -> repr RPS
   roundOutcome :: RoundOutcome -> repr RoundOutcome
