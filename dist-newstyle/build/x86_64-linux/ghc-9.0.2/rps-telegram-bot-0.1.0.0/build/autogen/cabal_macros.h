@@ -111,6 +111,16 @@
   (major1) == 9 && (major2) <  0 || \
   (major1) == 9 && (major2) == 0 && (minor) <= 2)
 #endif /* MIN_TOOL_VERSION_runghc */
+/* tool strip-2.38 */
+#ifndef TOOL_VERSION_strip
+#define TOOL_VERSION_strip "2.38"
+#endif /* TOOL_VERSION_strip */
+#ifndef MIN_TOOL_VERSION_strip
+#define MIN_TOOL_VERSION_strip(major1,major2,minor) (\
+  (major1) <  2 || \
+  (major1) == 2 && (major2) <  38 || \
+  (major1) == 2 && (major2) == 38 && (minor) <= 0)
+#endif /* MIN_TOOL_VERSION_strip */
 
 #ifndef CURRENT_PACKAGE_KEY
 #define CURRENT_PACKAGE_KEY "rps-telegram-bot-0.1.0.0-inplace"

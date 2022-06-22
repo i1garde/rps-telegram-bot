@@ -20,6 +20,16 @@
   (major1) == 4 && (major2) <  15 || \
   (major1) == 4 && (major2) == 15 && (minor) <= 1)
 #endif /* MIN_VERSION_base */
+/* package fmt-0.6.3.0 */
+#ifndef VERSION_fmt
+#define VERSION_fmt "0.6.3.0"
+#endif /* VERSION_fmt */
+#ifndef MIN_VERSION_fmt
+#define MIN_VERSION_fmt(major1,major2,minor) (\
+  (major1) <  0 || \
+  (major1) == 0 && (major2) <  6 || \
+  (major1) == 0 && (major2) == 6 && (minor) <= 3)
+#endif /* MIN_VERSION_fmt */
 /* package rps-telegram-bot-0.1.0.0 */
 #ifndef VERSION_rps_telegram_bot
 #define VERSION_rps_telegram_bot "0.1.0.0"
@@ -121,6 +131,16 @@
   (major1) == 9 && (major2) <  0 || \
   (major1) == 9 && (major2) == 0 && (minor) <= 2)
 #endif /* MIN_TOOL_VERSION_runghc */
+/* tool strip-2.38 */
+#ifndef TOOL_VERSION_strip
+#define TOOL_VERSION_strip "2.38"
+#endif /* TOOL_VERSION_strip */
+#ifndef MIN_TOOL_VERSION_strip
+#define MIN_TOOL_VERSION_strip(major1,major2,minor) (\
+  (major1) <  2 || \
+  (major1) == 2 && (major2) <  38 || \
+  (major1) == 2 && (major2) == 38 && (minor) <= 0)
+#endif /* MIN_TOOL_VERSION_strip */
 
 #ifndef CURRENT_COMPONENT_ID
 #define CURRENT_COMPONENT_ID "rps-telegram-bot-0.1.0.0-inplace-rps-telegram-bot"

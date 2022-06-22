@@ -1,15 +1,20 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Bot where
-import qualified Telegram.Bot.API as Telegram
+
 import Telegram.Bot.Simple
 import Telegram.Bot.Simple.Debug
-import RpsGame (GameState, RPS (..), runGame)
+import RpsGame (GameState, RPS (..), runGame, RoundOutcome (..))
 import Telegram.Bot.Simple.UpdateParser
 import Control.Applicative
 import Control.Monad.IO.Class
 import RpsRandom (randomItem)
-import Data.Text (pack)
+import Data.Text (pack, Text, append)
+import Telegram.Bot.API
+import Data.Text.Internal.Lazy (Text(Empty))
+import qualified GHC.TypeLits as Data
+import Fmt
+import Fmt.Internal.Core (FromBuilder(fromBuilder))
 
 type Model = ()
 
@@ -19,6 +24,7 @@ data Action
   | Start
   | Help
   | ChooseGameItem RPS
+  | ActMessage Data.Text.Text
   deriving (Show)
 
 bot :: BotApp Model Action
@@ -29,46 +35,65 @@ bot = BotApp
   , botJobs = []
   }
 
-handleUpdate :: Model -> Telegram.Update -> Maybe Action
+handleUpdate :: Model -> Update -> Maybe Action
 handleUpdate _ =
   parseUpdate
     ( Start <$ command "start"
         <|> Help <$ command "help"
-        <|> ChooseGameItem Rock <$ command "rock"
-        <|> ChooseGameItem Paper <$ command "paper"
-        <|> ChooseGameItem Scissors <$ command "scissors"
+        <|> ActMessage <$> plainText
     )
 
 -- | How to handle 'Action's.
 handleAction :: Action -> Model -> Eff Action Model
 handleAction action model = case action of
   NoAction -> pure model
-  Start ->
-    model <# do
-      replyOrEdit returnStartMessage
-      pure NoAction
   Help ->
     model <# do
       replyOrEdit returnHelpMessage
       pure NoAction
-  ChooseGameItem gameItem ->
-    model <# do
-      randItem <- liftIO randomItem
-      replyText . pack . show $ runGame gameItem randItem
-      --replyOrEdit . returnResultMessage $ "Hello"
-      --editUpdateMessage . returnResultMessage $ gameplay gameItem Scissors
-      pure NoAction
+  Start -> model <# do
+      reply (toReplyMessage "Let's play!\nChoose your item: ")
+        { replyMessageReplyMarkup = Just (SomeReplyKeyboardMarkup startKeyboard) }
+  ActMessage msg -> model <# do
+    botItem <- liftIO randomItem
+    case msg of
+      "Rock" -> replyOrEdit $ toEditMessage $ formatResult $ runGame Rock botItem
+      "Paper" -> replyOrEdit $ toEditMessage $ formatResult $ runGame Paper botItem
+      "Scissors" -> replyOrEdit $ toEditMessage $ formatResult $ runGame Scissors botItem
+      --_ -> reply (toReplyMessage msg) 
 
-returnStartMessage :: EditMessage
-returnStartMessage =
-  toEditMessage "Welcome to the Rock Paper Scissors game! (/help to discover commands)"
+formatRoundOutcome :: RoundOutcome -> String
+formatRoundOutcome roundOutcome =
+  case roundOutcome of
+    Win -> "You win!"
+    Lose -> "Bot wins."
+    Draw -> "It's a draw."
+
+formatResult :: GameState -> Data.Text.Text
+formatResult ((item, botItem), roundOutcome) = "You choosed " +|| item ||+ "\nBot's item is " +|| botItem ||+"\n" +|| formatRoundOutcome roundOutcome ||+ ""
+
+replyString :: String -> BotM ()
+replyString = reply . toReplyMessage . pack
 
 returnHelpMessage :: EditMessage
 returnHelpMessage =
-  toEditMessage "Choose Rock, Paper or Scissors: ( /rock , /paper , /scissors )"
+  toEditMessage "To start Rock, Paper or Scissors game round type /start"
+
+startKeyboard :: ReplyKeyboardMarkup
+startKeyboard = ReplyKeyboardMarkup
+  { replyKeyboardMarkupKeyboard =
+      [ [ "Rock" ]
+      , [ "Paper"]
+      , [ "Scissors" ]
+      ]
+  , replyKeyboardMarkupResizeKeyboard = Just True
+  , replyKeyboardMarkupOneTimeKeyboard = Just True
+  , replyKeyboardMarkupSelective = Nothing
+  , replyKeyboardMarkupInputFieldSelector = Nothing
+  }
 
 -- | Run bot with a given 'Telegram.Token'.
-run :: Telegram.Token -> IO ()
+run :: Token -> IO ()
 run token = do
-  env <- Telegram.defaultTelegramClientEnv token
+  env <- defaultTelegramClientEnv token
   startBot_ (traceBotDefault bot) env
